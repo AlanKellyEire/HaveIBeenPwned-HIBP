@@ -1,0 +1,5 @@
+{
+    "hibp_api_key": "XXXXXXXX",
+    "webhook_url": "https://webhook-collector.XX-XXXX-1.prod.alienvault.cloud/api/1.0/webhook/push",
+    "webhook_api_key": "XXXXXX"
+}
