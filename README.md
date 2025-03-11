@@ -1,4 +1,4 @@
-This script will query the HIBP API and identify users affected by a breach for a domain. It will then go more information on the breaches affected by each user and send a JSON log for each user to USMA using Webhooks.
+These scripts will query the HIBP API and identify users affected by a breach for a domain. It will then go more information on the breaches affected by each user and send a JSON log for each user to USMA using Webhooks.
 
 **Requirements:**
 
@@ -40,3 +40,66 @@ successfully sent event {'Name': 'Stratfor', 'Title': 'Stratfor', 'Domain': 'str
 **NOTE**
 
 A plugin/Parser/App will need to be created on the USMA side to parse the data out this can be created by following the instuctions in this [link](https://cybersecurity.att.com/documentation/usm-anywhere/alienapps-guide/custom-app-builder/configuring-custom-alienapp.htm)
+
+Sample parsing 
+
+```{
+   "name": "haveibeenpwned",
+   "device": "haveibeenpwned",
+   "type": "JSON",
+   "appFormat": "JSON",
+   "version": "0.1",
+   "highlight_fields": "source_user_email,domain_name,event_description,last_updated,source_username,legacy_date",
+   "hints": [],
+   "tags": {
+      "event_name": {
+         "matches": [
+            "'haveibeenpwned Event'"
+         ]
+      },
+      "last_updated": {
+         "matches": [
+            "map('$.ModifiedDate')"
+         ]
+      },
+      "searched_site": {
+         "matches": [
+            "map('$.Title')"
+         ]
+      },
+      "legacy_date": {
+         "matches": [
+            "map('$.BreachDate')"
+         ]
+      },
+      "domain_name": {
+         "matches": [
+            "map('$.Domain')"
+         ]
+      },
+      "event_description": {
+         "matches": [
+            "map('$.Description')"
+         ]
+      },
+      "source_user_email": {
+         "matches": [
+            "map('$.Email')"
+         ]
+      },
+      "source_username": {
+         "matches": [
+            "map('$.User')"
+         ]
+      }
+   }
+}
+```
+
+***NOTE***
+
+
+Log after parsing
+
+
+![haveIBeenPwned-Log-Parsing.png](haveIBeenPwned-Log-Parsing.png)
