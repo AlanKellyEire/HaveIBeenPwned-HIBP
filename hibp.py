@@ -5,6 +5,8 @@ import json
 import psutil
 import sys
 
+from numpy.matlib import empty
+
 # Configuration
 CONFIG_FILE = 'hibp-config.json'
 CONFIG_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), CONFIG_FILE)
@@ -27,19 +29,19 @@ def load_config():
             return config
         except json.JSONDecodeError:
             print("Error: Malformed JSON in config file. Please fix or delete the file.")
-            sys.exit(1)
+            sys.exit(2)
     else:
         with open(CONFIG_PATH, 'w') as f:
             json.dump(CONFIG_DEFAULTS, f, indent=4, sort_keys=True)
         print("Config file created. Please update it with valid API keys and URL.")
-        sys.exit(1)
+        sys.exit(3)
 
 
 CONFIG_DATA = load_config()
 HIBP_HEADERS = {"hibp-api-key": CONFIG_DATA['hibp_api_key']}
 BASE_URL = "https://haveibeenpwned.com/api/v3"
 DELAY = 30
-RETRIES = 3
+RETRIES = 1
 
 
 # Prevent multiple script instances
@@ -50,7 +52,7 @@ def check_if_already_running():
         if proc.info['name'] == current_name and proc.info['pid'] != current_pid:
             print("Another instance of the script is already running.")
             print(f"{proc.info['name']} and {proc.info['pid']}")
-            sys.exit(1)
+            sys.exit(4)
 
 
 # Send webhook message
@@ -72,12 +74,14 @@ def webhook_send_message(event):
 
 # Get breach details
 def get_breached_domain_info(breach):
+    print(f"Getting breach data for {breach} Breach")
     url = f"{BASE_URL}/breach/{breach}"
     return make_request(url)
 
 
 # Check if domain is breached
 def check_breached_domain(domain):
+    print(f"Getting domain breach data for domain {domain}")
     url = f"{BASE_URL}/breacheddomain/{domain}"
     return make_request(url)
 
@@ -122,7 +126,7 @@ def process_domain_list(domain):
 
     breaches = [get_breached_domain_info(breach) for breach in all_breaches]
     # API rate limit handling. HIBP API has no stated API limit just limiting it to 6 queries a minute
-    time.sleep(6) 
+    time.sleep(6)
 
     return breach_data, breaches
 
@@ -131,16 +135,22 @@ def process_domain_list(domain):
 def main(domain):
     user_breach_data, breach_data = process_domain_list(domain)
 
-    for user, breaches in user_breach_data.items():
-        if isinstance(breaches, list):
-            for breach in breaches:
-                for event in breach_data:
-                    # getting data of this breach for this user.
-                    if event['Name'] == breach:
-                        event['User'] = user
-                        # sending event for each breach for this user
-                        webhook_send_message(event)
-
+    try:
+        for user, breaches in user_breach_data.items():
+            if isinstance(breaches, list):
+                for breach in breaches:
+                    for event in breach_data:
+                        # getting data of this breach for this user.
+                        if event['Name'] == breach:
+                            event['User'] = user
+                            # sending event for each breach for this user
+                            webhook_send_message(event)
+    except Exception as e:
+        if not user_breach_data:
+            print("breach data is empty, Confirm API request completed.")
+            sys.exit(5)
+        else:
+            print(f"Exception {e}")
 
 if __name__ == "__main__":
     # checking if python already running
